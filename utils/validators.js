@@ -55,8 +55,9 @@ function validateWorkerInput(body) {
   const bio = str(body.bio);
   if (bio.length > 600) errors.push('Bio must be 600 characters or fewer.');
 
-  const phone = normalizePhone(body.phone);
-  if (!phone) errors.push('Enter a valid 10-digit Indian mobile number (e.g. +91 98765 43210).');
+  const rawPhone = body.phone ? String(body.phone).trim() : '';
+  const phone = /^[0-9]{10}$/.test(rawPhone) ? rawPhone : null;
+  if (!phone) errors.push('Phone number must be exactly 10 digits.');
 
   return {
     errors,

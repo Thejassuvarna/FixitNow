@@ -8,6 +8,8 @@ router.get('/', worker.home);
 router.get('/services', worker.list);
 
 // Worker dashboard
+router.get('/dashboard', requireRole('worker'), (req, res) => res.redirect('/dashboard/worker'));
+router.post('/dashboard', requireRole('worker'), uploadPhoto, worker.updateProfile);
 router.get('/dashboard/worker', requireRole('worker'), worker.dashboard);
 router.post('/dashboard/worker', requireRole('worker'), uploadPhoto, worker.updateProfile);
 router.post('/dashboard/worker/availability', requireRole('worker'), worker.toggleAvailability);

@@ -9,7 +9,12 @@ const userSchema = new mongoose.Schema({
   },
   password: { type: String, required: [true, 'Password is required'], minlength: 8, select: false },
   role: { type: String, enum: ['customer', 'worker', 'admin'], default: 'customer' },
-  phone: { type: String, trim: true }, // stored as "+91 98765 43210"
+  phone: {
+    type: String,
+    trim: true,
+    match: [/^[0-9]{10}$/, 'Phone number must be exactly 10 digits'],
+  },
+  workImages: [{ type: String, trim: true }],
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -21,6 +26,10 @@ userSchema.pre('save', async function hashPassword() {
 
 userSchema.methods.comparePassword = function comparePassword(plain) {
   return bcrypt.compare(plain, this.password);
+};
+
+userSchema.methods.toString = function() {
+  return this._id ? this._id.toString() : '';
 };
 
 module.exports = mongoose.model('User', userSchema);

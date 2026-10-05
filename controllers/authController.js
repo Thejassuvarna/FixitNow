@@ -24,8 +24,8 @@ function startSession(req, user) {
 
 const registerView = (res, extra = {}) =>
   res.render('auth/register', {
-    title: 'Create your account – LocalFix',
-    description: 'Join LocalFix as a customer to book trusted local pros, or as a worker to grow your business.',
+    title: 'Create your account – FixitNow',
+    description: 'Join FixitNow as a customer to book trusted local pros, or as a worker to grow your business.',
     categories: CATEGORIES,
     states: INDIAN_STATES,
     form: {},
@@ -47,7 +47,7 @@ exports.postRegister = async (req, res, next) => {
     // never echo passwords back
     const { password, confirmPassword, ...form } = body;
     return res.status(code).render('auth/register', {
-      title: 'Create your account – LocalFix', description: '', categories: CATEGORIES,
+      title: 'Create your account – FixitNow', description: '', categories: CATEGORIES,
       states: INDIAN_STATES, form, role, errors,
     });
   };
@@ -63,16 +63,29 @@ exports.postRegister = async (req, res, next) => {
     if (password !== body.confirmPassword) errors.push('Passwords do not match.');
     if (req.uploadError) errors.push(req.uploadError);
 
+    const rawPhone = body.phone ? String(body.phone).trim() : '';
     let phone = null;
     let workerData = null;
     if (role === 'worker') {
+      if (!rawPhone || !/^[0-9]{10}$/.test(rawPhone)) {
+        const msg = 'Phone number must be exactly 10 digits.';
+        if (!errors.includes(msg)) errors.push(msg);
+        if (req.flash) req.flash('error', msg);
+      }
       const result = validateWorkerInput(body);
-      errors.push(...result.errors);
-      phone = result.phone;
+      result.errors.forEach((err) => {
+        if (!errors.includes(err)) errors.push(err);
+      });
+      phone = /^[0-9]{10}$/.test(rawPhone) ? rawPhone : null;
       workerData = result.data;
-    } else if (body.phone && body.phone.trim()) {
-      phone = normalizePhone(body.phone);
-      if (!phone) errors.push('Enter a valid 10-digit Indian mobile number (e.g. +91 98765 43210).');
+    } else if (rawPhone) {
+      if (!/^[0-9]{10}$/.test(rawPhone)) {
+        const msg = 'Phone number must be exactly 10 digits.';
+        if (!errors.includes(msg)) errors.push(msg);
+        if (req.flash) req.flash('error', msg);
+      } else {
+        phone = rawPhone;
+      }
     }
 
     if (!errors.length && (await User.exists({ email }))) errors.push('An account with this email already exists. Try logging in.');
@@ -84,6 +97,7 @@ exports.postRegister = async (req, res, next) => {
       try {
         await WorkerProfile.create({
           userId: user._id,
+          phone: user.phone,
           ...workerData,
           photo: req.file ? `/uploads/${req.file.filename}` : undefined,
         });
@@ -94,7 +108,7 @@ exports.postRegister = async (req, res, next) => {
     }
 
     await startSession(req, user);
-    req.flash('success', `Welcome to LocalFix, ${user.name.split(' ')[0]}! 🎉`);
+    req.flash('success', `Welcome to FixitNow, ${user.name.split(' ')[0]}! 🎉`);
     if (role === 'worker') req.flash('info', 'Your profile is live. Keep your availability up to date to get more bookings.');
     return res.redirect(homeFor(role));
   } catch (err) {
@@ -109,8 +123,8 @@ exports.postRegister = async (req, res, next) => {
 
 exports.getLogin = (req, res) => {
   res.render('auth/login', {
-    title: 'Log in – LocalFix',
-    description: 'Log in to your LocalFix account.',
+    title: 'Log in – FixitNow',
+    description: 'Log in to your FixitNow account.',
     role: req.query.role === 'worker' ? 'worker' : 'customer',
     form: {},
     errors: [],
@@ -122,7 +136,7 @@ exports.postLogin = async (req, res, next) => {
   const role = req.body.role === 'worker' ? 'worker' : 'customer';
   const fail = (msg) =>
     res.status(401).render('auth/login', {
-      title: 'Log in – LocalFix', description: '', role, form: { email }, errors: [msg],
+      title: 'Log in – FixitNow', description: '', role, form: { email }, errors: [msg],
     });
 
   try {
@@ -147,6 +161,7 @@ exports.postLogin = async (req, res, next) => {
 
 exports.logout = (req, res) => {
   req.session.destroy(() => {
+    res.clearCookie('fixitnow.sid');
     res.clearCookie('localfix.sid');
     res.redirect('/');
   });

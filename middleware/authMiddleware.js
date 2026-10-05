@@ -5,7 +5,7 @@ const { safeRedirect } = require('../utils/helpers');
 /** Attaches the logged-in user + flash helpers + view locals */
 function attachLocals(req, res, next) {
   const s = req.session;
-  res.locals.currentUser = s && s.userId ? { id: s.userId, name: s.name, role: s.role } : null;
+  res.locals.currentUser = s && s.userId ? { id: s.userId, _id: s.userId, name: s.name, role: s.role } : null;
 
   // Minimal session-based flash messages
   req.flash = (type, message) => {
@@ -19,9 +19,10 @@ function attachLocals(req, res, next) {
 }
 
 function requireAuth(req, res, next) {
-  if (req.session.userId) return next();
-  req.session.returnTo = req.originalUrl;
-  req.flash('info', 'Please log in to continue.');
+  if (req.session && req.session.userId) return next();
+  if (req.user && (req.user._id || req.user.id)) return next();
+  if (req.session) req.session.returnTo = req.originalUrl;
+  if (req.flash) req.flash('info', 'Please log in to continue.');
   return res.redirect('/auth/login');
 }
 
@@ -50,21 +51,50 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB per file
   fileFilter: (req, file, cb) => {
-    const ok = /^image\/(jpeg|png|webp)$/.test(file.mimetype) && /\.(jpe?g|png|webp)$/i.test(file.originalname);
-    cb(ok ? null : new Error('Profile photo must be a JPG, PNG or WEBP image.'), ok);
+    const ok = /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype) && /\.(jpe?g|png|webp|gif)$/i.test(file.originalname);
+    cb(ok ? null : new Error('Photos must be JPG, PNG, or WEBP images.'), ok);
   },
-}).single('photo');
+});
+
+const uploadWorkerProfileFields = upload.fields([
+  { name: 'photo', maxCount: 1 },
+  { name: 'workPhotos', maxCount: 20 },
+  { name: 'images', maxCount: 20 },
+]);
 
 /** Wraps multer so upload problems become req.uploadError instead of crashing the request */
 function uploadPhoto(req, res, next) {
-  upload(req, res, (err) => {
+  uploadWorkerProfileFields(req, res, (err) => {
     if (err) {
-      req.uploadError = err.code === 'LIMIT_FILE_SIZE' ? 'Profile photo must be smaller than 2 MB.' : err.message;
+      req.uploadError = err.code === 'LIMIT_FILE_SIZE' ? 'Uploaded files must be smaller than 5 MB.' : err.message;
+    }
+    if (req.files) {
+      if (req.files.photo && req.files.photo[0]) {
+        req.file = req.files.photo[0];
+      }
+      if (req.files.workPhotos) {
+        req.workPhotos = req.files.workPhotos;
+      }
     }
     next();
   });
 }
 
-module.exports = { attachLocals, requireAuth, requireRole, redirectIfAuth, uploadPhoto, safeRedirect };
+/** Handles multiple work photo uploads (supports 'workPhotos' or 'images') */
+const uploadWorkPhotos = (req, res, next) => {
+  upload.fields([
+    { name: 'workPhotos', maxCount: 20 },
+    { name: 'images', maxCount: 20 },
+  ])(req, res, (err) => {
+    if (err) return next(err);
+    if (req.files && !Array.isArray(req.files)) {
+      req.files = [...(req.files.workPhotos || []), ...(req.files.images || [])];
+    }
+    next();
+  });
+};
+uploadWorkPhotos.array = (field = 'workPhotos', max = 20) => upload.array(field, max);
+
+module.exports = { attachLocals, requireAuth, requireRole, redirectIfAuth, uploadPhoto, upload, uploadWorkPhotos, safeRedirect };

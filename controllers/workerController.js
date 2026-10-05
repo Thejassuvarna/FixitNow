@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const mongoose = require('mongoose');
 const WorkerProfile = require('../models/WorkerProfile');
 const Review = require('../models/Review');
@@ -60,7 +62,7 @@ exports.home = async (req, res, next) => {
     const countMap = Object.fromEntries(counts.map((c) => [c._id, c.n]));
 
     res.render('index', {
-      title: 'LocalFix – Trusted electricians, plumbers & more near you',
+      title: 'FixitNow – Trusted electricians, plumbers & more near you',
       description: 'Book verified local electricians, plumbers, mechanics, carpenters, painters and AC technicians in your city. Transparent ₹ pricing.',
       categories: CATEGORIES.map((c) => ({ ...c, count: countMap[c.name] || 0 })),
       featured: featured.filter((w) => w.userId),
@@ -96,7 +98,7 @@ exports.list = async (req, res, next) => {
 
     const active = CATEGORIES.find((c) => c.name === query.category);
     res.render('workers/index', {
-      title: `${active ? active.name + 's' : 'Local service professionals'}${query.location ? ' in ' + query.location : ''} – LocalFix`,
+      title: `${active ? active.name + 's' : 'Local service professionals'}${query.location ? ' in ' + query.location : ''} – FixitNow`,
       description: 'Browse verified local service professionals. Filter by category, pincode, city, price in ₹ and rating.',
       workers: workers.filter((w) => w.userId),
       query, total, page,
@@ -121,6 +123,10 @@ exports.show = async (req, res, next) => {
       return next(Object.assign(new Error('This worker profile could not be found.'), { status: 404 }));
     }
 
+    if (worker && worker.userId && worker.userId._id) {
+      worker.userId.toString = function() { return this._id.toString(); };
+    }
+
     const [reviews, similar] = await Promise.all([
       Review.find({ workerId: worker._id }).sort({ createdAt: -1 }).populate('customerId', 'name'),
       WorkerProfile.find({ _id: { $ne: worker._id }, isActive: true, category: worker.category })
@@ -134,7 +140,7 @@ exports.show = async (req, res, next) => {
       ? reviews.find((r) => r.customerId && r.customerId._id.toString() === viewer.id) : null;
 
     res.render('workers/show', {
-      title: `${worker.userId.name} – ${worker.category} in ${worker.location.city} | LocalFix`,
+      title: `${worker.userId.name} – ${worker.category} in ${worker.location.city} | FixitNow`,
       description: `${worker.userId.name}, ${worker.category} in ${worker.location.city} (${worker.location.pincode}). ₹${worker.hourlyRate}/hr. Rated ${worker.averageRating}/5.`,
       worker, reviews, distribution, myReview, similar: similar.filter((w) => w.userId), isOwner,
       errors: [], form: {},
@@ -149,8 +155,8 @@ async function renderDashboard(req, res, next, extra = {}) {
     if (!worker) return next(Object.assign(new Error('Worker profile not found.'), { status: 404 }));
     const recent = await Review.find({ workerId: worker._id }).sort({ createdAt: -1 }).limit(5).populate('customerId', 'name');
     return res.render('dashboard/worker', {
-      title: 'Worker dashboard – LocalFix',
-      description: 'Manage your LocalFix listing.',
+      title: 'Worker dashboard – FixitNow',
+      description: 'Manage your FixitNow listing.',
       worker, recent, states: INDIAN_STATES, categories: CATEGORIES, errors: [], form: null, ...extra,
     });
   } catch (err) { return next(err); }
@@ -164,15 +170,26 @@ exports.updateProfile = async (req, res, next) => {
     const worker = await WorkerProfile.findOne({ userId: req.session.userId });
     if (!worker) return next(Object.assign(new Error('Worker profile not found.'), { status: 404 }));
 
+    const rawPhone = req.body.phone ? String(req.body.phone).trim() : '';
+    if (!rawPhone || !/^[0-9]{10}$/.test(rawPhone)) {
+      removeUpload(req.file);
+      const msg = 'Phone number must be exactly 10 digits.';
+      if (req.flash) req.flash('error', msg);
+      res.status(400);
+      return renderDashboard(req, res, next, { errors: [msg], form: req.body });
+    }
+
     const { errors, data, phone } = validateWorkerInput(req.body);
     if (req.uploadError) errors.push(req.uploadError);
     if (errors.length) {
       removeUpload(req.file);
+      if (req.flash) errors.forEach((e) => req.flash('error', e));
       res.status(400);
       return renderDashboard(req, res, next, { errors, form: req.body });
     }
 
     Object.assign(worker, data);
+    worker.phone = phone;
     if (req.file) {
       const old = worker.photo;
       worker.photo = `/uploads/${req.file.filename}`;
@@ -180,8 +197,27 @@ exports.updateProfile = async (req, res, next) => {
         require('fs').unlink(require('path').join(__dirname, '..', 'public', old), () => {});
       }
     }
+
+    // Handle work photos uploaded with profile update
+    const uploadedWorkPhotos = req.workPhotos || (req.files && (req.files.workPhotos || req.files.images)) || [];
+    if (uploadedWorkPhotos && uploadedWorkPhotos.length > 0) {
+      const newUrls = uploadedWorkPhotos.map((file) => {
+        if (file.path && /^https?:\/\//.test(file.path)) return file.path;
+        if (file.secure_url) return file.secure_url;
+        if (file.url) return file.url;
+        if (file.filename) return `/uploads/${file.filename}`;
+        if (file.path) {
+          const base = path.basename(file.path);
+          return `/uploads/${base}`;
+        }
+        return `/uploads/${file.originalname}`;
+      });
+      if (!worker.workImages) worker.workImages = [];
+      worker.workImages.push(...newUrls);
+    }
+
     await worker.save();
-    await User.findByIdAndUpdate(req.session.userId, { phone });
+    await User.findByIdAndUpdate(req.session.userId, { phone }, { runValidators: true });
 
     req.flash('success', 'Profile updated successfully.');
     return res.redirect('/dashboard/worker');
@@ -208,3 +244,167 @@ exports.toggleAvailability = async (req, res, next) => {
     return res.redirect('/dashboard/worker');
   } catch (err) { return next(err); }
 };
+
+/* ---------------- POST /workers/:id/photos ---------------- */
+exports.uploadWorkPhotos = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      if (req.files) {
+        if (Array.isArray(req.files)) req.files.forEach(removeUpload);
+        else Object.values(req.files).flat().forEach(removeUpload);
+      }
+      return next(Object.assign(new Error('Worker not found.'), { status: 404 }));
+    }
+
+    const worker = await WorkerProfile.findById(id);
+    if (!worker) {
+      if (req.files) {
+        if (Array.isArray(req.files)) req.files.forEach(removeUpload);
+        else Object.values(req.files).flat().forEach(removeUpload);
+      }
+      return next(Object.assign(new Error('Worker profile not found.'), { status: 404 }));
+    }
+
+    // Validate that the logged-in user is authenticated and matches the worker profile owner
+    const currentUserId = (req.session && req.session.userId)
+      ? req.session.userId.toString()
+      : (req.user && (req.user._id || req.user.id)?.toString());
+    const currentUserRole = (req.session && req.session.role) || (req.user && req.user.role);
+    const workerUserId = worker.userId && (worker.userId._id || worker.userId).toString();
+
+    if (!currentUserId) {
+      if (req.files) {
+        if (Array.isArray(req.files)) req.files.forEach(removeUpload);
+        else Object.values(req.files).flat().forEach(removeUpload);
+      }
+      if (req.flash) req.flash('error', 'Please log in to continue.');
+      const err = new Error('Authentication required.');
+      err.status = 401;
+      return next(err);
+    }
+
+    const isOwner = Boolean(currentUserId === workerUserId);
+    const isAdmin = currentUserRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      if (req.files) {
+        if (Array.isArray(req.files)) req.files.forEach(removeUpload);
+        else Object.values(req.files).flat().forEach(removeUpload);
+      }
+      if (req.flash) req.flash('error', 'You do not have permission to upload photos to this profile.');
+      const err = new Error('You do not have permission to upload photos to this profile.');
+      err.status = 403;
+      return next(err);
+    }
+
+    // Collect files from various multer structures
+    let files = [];
+    if (Array.isArray(req.files)) {
+      files = req.files;
+    } else if (req.files && typeof req.files === 'object') {
+      files = [...(req.files.workPhotos || []), ...(req.files.images || []), ...Object.values(req.files).flat()]
+        .filter((v, i, a) => a.indexOf(v) === i);
+    } else if (req.file) {
+      files = [req.file];
+    }
+
+    // Check if files were uploaded
+    if (!files || files.length === 0) {
+      if (req.flash) req.flash('error', 'Please select at least one photo to upload.');
+      const returnUrl = req.body.returnTo || req.query.returnTo || (req.get('Referrer') && req.get('Referrer').includes('/dashboard') ? '/dashboard/worker' : `/workers/${worker._id}`);
+      return res.redirect(returnUrl);
+    }
+
+    // Map uploaded files to URLs
+    const uploadedUrls = files.map((file) => {
+      if (file.path && /^https?:\/\//.test(file.path)) return file.path;
+      if (file.secure_url) return file.secure_url;
+      if (file.url) return file.url;
+      if (file.filename) return `/uploads/${file.filename}`;
+      if (file.path) {
+        const base = path.basename(file.path);
+        return `/uploads/${base}`;
+      }
+      return `/uploads/${file.originalname}`;
+    });
+
+    if (!worker.workImages) {
+      worker.workImages = [];
+    }
+    worker.workImages.push(...uploadedUrls);
+    await worker.save();
+
+    if (req.flash) req.flash('success', `${uploadedUrls.length} work photo${uploadedUrls.length > 1 ? 's' : ''} uploaded successfully.`);
+    const returnUrl = req.body.returnTo || req.query.returnTo || (req.get('Referrer') && req.get('Referrer').includes('/dashboard') ? '/dashboard/worker' : `/workers/${worker._id}`);
+    return res.redirect(returnUrl);
+  } catch (err) {
+    if (req.files) {
+      if (Array.isArray(req.files)) req.files.forEach(removeUpload);
+      else Object.values(req.files).flat().forEach(removeUpload);
+    }
+    return next(err);
+  }
+};
+exports.uploadPhotos = exports.uploadWorkPhotos;
+
+/* ---------------- DELETE /workers/:id/photos/:photoIndex ---------------- */
+exports.deleteWorkPhoto = async (req, res, next) => {
+  try {
+    const { id, photoIndex } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return next(Object.assign(new Error('Worker not found.'), { status: 404 }));
+    }
+
+    const worker = await WorkerProfile.findById(id);
+    if (!worker) {
+      return next(Object.assign(new Error('Worker profile not found.'), { status: 404 }));
+    }
+
+    const currentUserId = (req.session && req.session.userId)
+      ? req.session.userId.toString()
+      : (req.user && (req.user._id || req.user.id)?.toString());
+    const currentUserRole = (req.session && req.session.role) || (req.user && req.user.role);
+    const workerUserId = worker.userId && (worker.userId._id || worker.userId).toString();
+
+    const isOwner = Boolean(currentUserId && currentUserId === workerUserId);
+    const isAdmin = currentUserRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      const err = new Error('You do not have permission to delete photos from this profile.');
+      err.status = 403;
+      return next(err);
+    }
+
+    const index = parseInt(photoIndex, 10);
+    if (isNaN(index) || !worker.workImages || index < 0 || index >= worker.workImages.length) {
+      req.flash('error', 'Photo not found.');
+      const returnUrl = req.body.returnTo || req.query.returnTo || (req.get('Referrer') && req.get('Referrer').includes('/dashboard') ? '/dashboard/worker' : `/workers/${worker._id}`);
+      return res.redirect(returnUrl);
+    }
+
+    // Clean up local disk file if exists
+    const removedItem = worker.workImages[index];
+    const removedImgPath = typeof removedItem === 'string' ? removedItem : (removedItem.url || '');
+    if (removedImgPath && removedImgPath.startsWith('/uploads/')) {
+      const p = path.join(__dirname, '..', 'public', removedImgPath);
+      fs.unlink(p, () => {});
+    }
+
+    worker.workImages.splice(index, 1);
+    await worker.save();
+
+    if (req.xhr || (req.headers && (req.headers.accept || '').includes('application/json'))) {
+      return res.json({ ok: true, workImages: worker.workImages });
+    }
+
+    req.flash('success', 'Work photo removed successfully.');
+    const returnUrl = req.body.returnTo || req.query.returnTo || (req.get('Referrer') && req.get('Referrer').includes('/dashboard') ? '/dashboard/worker' : `/workers/${worker._id}`);
+    return res.redirect(returnUrl);
+  } catch (err) {
+    return next(err);
+  }
+};
+exports.deletePhoto = exports.deleteWorkPhoto;
+
+

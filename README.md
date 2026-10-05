@@ -1,4 +1,4 @@
-# LocalFix
+# FixitNow
 
 On-demand marketplace connecting customers with trusted local service professionals in India
 (electricians, plumbers, mechanics, carpenters, painters, AC technicians). All prices in ₹ (INR).
@@ -22,7 +22,7 @@ Development (Tailwind watch + nodemon): `npm run dev`
 
 | Role     | Email                | Password       |
 |----------|----------------------|----------------|
-| Admin    | admin@localfix.in    | Admin@12345    |
+| Admin    | admin@fixitnow.in    | Admin@12345    |
 | Customer | priya@example.com    | Password@123   |
 | Worker   | ramesh@example.com   | Password@123   |
 

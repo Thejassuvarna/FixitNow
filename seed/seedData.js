@@ -1,5 +1,5 @@
 /**
- * Seeds LocalFix with demo data: 1 admin, 5 customers, 16 workers and ~60 reviews.
+ * Seeds FixitNow with demo data: 1 admin, 5 customers, 16 workers and ~60 reviews.
  * Usage: npm run seed   (WARNING: wipes users, workerprofiles and reviews)
  */
 require('dotenv').config();
@@ -13,7 +13,7 @@ const { normalizePhone } = require('../utils/helpers');
 const PASSWORD = 'Password@123';
 const ADMIN_PASSWORD = 'Admin@12345';
 
-const mkPhone = (i) => normalizePhone(String(9800000000 + i * 7919337));
+const mkPhone = (i) => String(9810000000 + i * 12345);
 
 const customers = [
   { name: 'Priya Nair', email: 'priya@example.com' },
@@ -25,7 +25,7 @@ const customers = [
 
 // ratings = one per customer (in order, 0 = no review)
 const workers = [
-  { name: 'Ramesh Shetty', email: 'ramesh@example.com', phone: '+91 98765 43210', category: 'Electrician', exp: 8, rate: 299, visit: 150, city: 'Puttur', state: 'Karnataka', pin: '574201', area: 'Main Road, Darbe', extra: ['574202', '574203', '574241'], radius: 15, verified: true, skills: ['House wiring', 'Inverter installation', 'MCB & switchboard repair', 'Fan & light fitting'], bio: 'Licensed electrician with 8 years of experience in homes and small shops across Puttur taluk. Punctual, neat work and honest quotes.', ratings: [5, 5, 4, 5, 5] },
+  { name: 'Ramesh Shetty', email: 'ramesh@example.com', phone: '9876543210', category: 'Electrician', exp: 8, rate: 299, visit: 150, city: 'Puttur', state: 'Karnataka', pin: '574201', area: 'Main Road, Darbe', extra: ['574202', '574203', '574241'], radius: 15, verified: true, skills: ['House wiring', 'Inverter installation', 'MCB & switchboard repair', 'Fan & light fitting'], bio: 'Licensed electrician with 8 years of experience in homes and small shops across Puttur taluk. Punctual, neat work and honest quotes.', ratings: [5, 5, 4, 5, 5] },
   { name: 'Abdul Rahim', email: 'rahim@example.com', category: 'Plumber', exp: 11, rate: 350, visit: 100, city: 'Puttur', state: 'Karnataka', pin: '574201', area: 'Bolwar', extra: ['574202', '574210'], radius: 12, verified: true, skills: ['Leak repair', 'Bathroom fittings', 'Water tank & pipeline', 'Motor pump service'], bio: 'Plumbing specialist for leaks, bathroom fittings and overhead tank pipelines. Same-day service in Puttur.', ratings: [5, 4, 5, 4, 0] },
   { name: 'Suresh Naik', email: 'suresh@example.com', category: 'Carpenter', exp: 14, rate: 450, visit: 200, city: 'Mangaluru', state: 'Karnataka', pin: '575001', area: 'Hampankatta', extra: ['575002', '575003', '575006'], radius: 20, verified: true, skills: ['Modular kitchens', 'Wardrobes', 'Door & window repair', 'Teak furniture'], bio: 'Custom furniture and modular kitchen work with 14 years of craftsmanship. Free measurement visit above ₹5,000 jobs.', ratings: [5, 5, 5, 4, 5] },
   { name: 'Harish Poojary', email: 'harish@example.com', category: 'Painter', exp: 9, rate: 400, visit: 0, city: 'Mangaluru', state: 'Karnataka', pin: '575003', area: 'Kadri', extra: ['575001', '575004'], radius: 15, verified: true, skills: ['Interior painting', 'Exterior weatherproofing', 'Texture & stencil', 'Waterproofing'], bio: 'Clean, on-time wall painting with premium finishes. Free inspection and colour consultation.', ratings: [4, 4, 5, 0, 4] },
@@ -55,7 +55,7 @@ const pick = (arr, i) => arr[i % arr.length];
   console.log('🧹 Clearing existing data…');
   await Promise.all([User.deleteMany({}), WorkerProfile.deleteMany({}), Review.deleteMany({})]);
 
-  await User.create({ name: 'LocalFix Admin', email: 'admin@localfix.in', password: ADMIN_PASSWORD, role: 'admin', phone: '+91 80456 78900' });
+  await User.create({ name: 'FixitNow Admin', email: 'admin@fixitnow.in', password: ADMIN_PASSWORD, role: 'admin', phone: '8045678900' });
 
   const customerDocs = [];
   for (const [i, c] of customers.entries()) {
@@ -64,9 +64,10 @@ const pick = (arr, i) => arr[i % arr.length];
 
   let reviewTotal = 0;
   for (const [i, w] of workers.entries()) {
-    const user = await User.create({ name: w.name, email: w.email, password: PASSWORD, role: 'worker', phone: w.phone || mkPhone(i + 1) });
+    const phone = w.phone ? (normalizePhone(w.phone) || w.phone) : mkPhone(i + 1);
+    const user = await User.create({ name: w.name, email: w.email, password: PASSWORD, role: 'worker', phone });
     const profile = await WorkerProfile.create({
-      userId: user._id, category: w.category, skills: w.skills, experienceYears: w.exp,
+      userId: user._id, phone, category: w.category, skills: w.skills, experienceYears: w.exp,
       hourlyRate: w.rate, visitingCharges: w.visit, bio: w.bio,
       location: { address: w.area, city: w.city, state: w.state, pincode: w.pin },
       servicePincodes: [w.pin, ...w.extra], serviceRadiusKm: w.radius,
@@ -87,7 +88,7 @@ const pick = (arr, i) => arr[i % arr.length];
 
   console.log(`✅ Seeded 1 admin, ${customerDocs.length} customers, ${workers.length} workers, ${reviewTotal} reviews.\n`);
   console.log('Login credentials');
-  console.log(`  Admin    admin@localfix.in     / ${ADMIN_PASSWORD}`);
+  console.log(`  Admin    admin@fixitnow.in     / ${ADMIN_PASSWORD}`);
   console.log(`  Customer priya@example.com     / ${PASSWORD}`);
   console.log(`  Worker   ramesh@example.com    / ${PASSWORD}`);
   await mongoose.disconnect();

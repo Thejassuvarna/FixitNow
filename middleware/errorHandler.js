@@ -15,10 +15,16 @@ function notFound(req, res, next) {
 
 function errorHandler(err, req, res, next) {
   if (req.file) removeUpload(req.file);
+  if (req.files && Array.isArray(req.files)) req.files.forEach(removeUpload);
 
   let status = err.status || 500;
   if (err.name === 'CastError') status = 404;
   if (err.name === 'ValidationError') status = 400;
+  if (err.name === 'MulterError') {
+    status = 400;
+    if (err.code === 'LIMIT_FILE_SIZE') err.message = 'Photos must be smaller than 5 MB.';
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') err.message = 'You can upload up to 5 photos at a time.';
+  }
 
   if (status >= 500) console.error(err);
 
@@ -38,7 +44,7 @@ function errorHandler(err, req, res, next) {
   if (wantsJson) return res.status(status).json({ ok: false, message });
 
   return res.status(status).render('error', {
-    title: `${status} – LocalFix`,
+    title: `${status} – FixitNow`,
     status,
     heading: messages[status] || 'Oops, something went wrong',
     message,

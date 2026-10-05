@@ -33,8 +33,8 @@ app.use(express.json());
 Object.assign(app.locals, helpers, {
   CATEGORIES: constants.CATEGORIES,
   categoryMeta: constants.categoryMeta,
-  siteName: 'LocalFix',
-  title: 'LocalFix – Trusted local service professionals',
+  siteName: 'FixitNow',
+  title: 'FixitNow – Trusted local service professionals',
   description: 'Find trusted electricians, plumbers, mechanics, carpenters, painters and AC technicians near you.',
 });
 
@@ -42,7 +42,7 @@ Object.assign(app.locals, helpers, {
   const mongoUri = await connectDB();
 
   app.use(session({
-    name: 'localfix.sid',
+    name: 'fixitnow.sid',
     secret: process.env.SESSION_SECRET || 'dev-only-change-me',
     resave: false,
     saveUninitialized: false,
@@ -59,5 +59,5 @@ Object.assign(app.locals, helpers, {
   app.use(notFound);
   app.use(errorHandler);
 
-  app.listen(PORT, () => console.log(`🚀 LocalFix running at http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`🚀 FixitNow running at http://localhost:${PORT}`));
 })();

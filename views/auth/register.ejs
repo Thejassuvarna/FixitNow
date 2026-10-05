@@ -1,7 +1,7 @@
 <section class="container-x py-8 lg:py-12">
   <div class="mx-auto max-w-3xl">
     <div class="card rounded-3xl p-6 sm:p-10">
-      <p class="eyebrow">Join LocalFix</p>
+      <p class="eyebrow">Join FixitNow</p>
       <h1 class="text-3xl font-extrabold sm:text-4xl">Create your account</h1>
       <p class="mt-1 text-ink-500">Already registered? <a href="/auth/login" class="font-bold text-brand-600 hover:underline">Log in</a></p>
 
@@ -29,7 +29,7 @@
             </div>
             <div>
               <label for="phone" class="label">Mobile number <span class="font-normal text-ink-400" id="phone-optional">(optional)</span><span class="hidden" id="phone-required">*</span></label>
-              <input type="tel" name="phone" id="phone" class="input" value="<%= form.phone || '' %>" placeholder="+91 98765 43210" autocomplete="tel" inputmode="tel">
+              <input type="tel" name="phone" id="phone" class="input" value="<%= form.phone || '' %>" placeholder="9876543210" autocomplete="tel" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
             </div>
             <div class="sm:col-span-2">
               <label for="email" class="label">Email *</label>
@@ -61,7 +61,7 @@
         <button type="submit" class="btn-primary w-full !py-3.5 text-base" id="register-submit">
           <span id="register-label"><%= role === 'worker' ? 'Create worker account' : 'Create customer account' %></span> <%- icon('arrow', 'h-4 w-4') %>
         </button>
-        <p class="text-center text-xs text-ink-400">By signing up you agree to LocalFix's Terms of Service and Privacy Policy.</p>
+        <p class="text-center text-xs text-ink-400">By signing up you agree to FixitNow's Terms of Service and Privacy Policy.</p>
       </form>
     </div>
   </div>

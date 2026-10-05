@@ -10,6 +10,12 @@ const workerProfileSchema = new mongoose.Schema({
   visitingCharges: { type: Number, min: 0, default: 0 },       // ₹ inspection / visit fee
   bio: { type: String, trim: true, maxlength: 600 },
   photo: { type: String },                                      // e.g. /uploads/worker-123.jpg
+  phone: {
+    type: String,
+    trim: true,
+    match: [/^[0-9]{10}$/, 'Phone number must be exactly 10 digits'],
+  },
+  workImages: [{ type: String }],                               // portfolio / work photos
   location: {
     address: { type: String, trim: true },
     city: { type: String, required: true, trim: true, index: true },

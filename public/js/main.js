@@ -1,4 +1,4 @@
-/* LocalFix – client-side behaviour (vanilla ES6+) */
+/* FixitNow – client-side behaviour (vanilla ES6+) */
 (() => {
   'use strict';
   const $ = (sel, root = document) => root.querySelector(sel);

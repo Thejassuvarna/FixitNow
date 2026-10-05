@@ -17,7 +17,7 @@ exports.dashboard = async (req, res, next) => {
       WorkerProfile.countDocuments({ isVerified: false }),
     ]);
     res.render('admin/index', {
-      title: 'Admin – LocalFix',
+      title: 'Admin – FixitNow',
       description: 'Moderate listings and reviews.',
       workers: workers.filter((w) => w.userId),
       reviews: reviews.filter((r) => r.workerId && r.workerId.userId && r.customerId),

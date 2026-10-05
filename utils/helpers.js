@@ -4,24 +4,31 @@ const { AVATAR_GRADIENTS } = require('./constants');
 const formatINR = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
 /**
- * Normalises an Indian mobile number to "+91 98765 43210".
- * Accepts: 9876543210, 09876543210, 919876543210, +91-98765-43210, etc.
- * Returns null when the number is not a valid 10-digit Indian mobile.
+ * Normalises a mobile number to an exact 10-digit string.
+ * Returns null when the number is not a valid 10-digit mobile.
  */
 function normalizePhone(input) {
   if (!input) return null;
   let d = String(input).replace(/\D/g, '');
   if (d.length === 12 && d.startsWith('91')) d = d.slice(2);
   else if (d.length === 11 && d.startsWith('0')) d = d.slice(1);
-  if (!/^[6-9]\d{9}$/.test(d)) return null;
-  return `+91 ${d.slice(0, 5)} ${d.slice(5)}`;
+  if (!/^[0-9]{10}$/.test(d)) return null;
+  return d;
 }
 
-/** "+91 98765 43210" -> "919876543210" (for wa.me links) */
-const phoneDigits = (phone) => String(phone || '').replace(/\D/g, '');
+/** 10-digit phone -> "919876543210" (for wa.me links) */
+const phoneDigits = (phone) => {
+  const d = String(phone || '').replace(/\D/g, '');
+  if (d.length === 10) return `91${d}`;
+  return d;
+};
 
-/** "+91 98765 43210" -> "+919876543210" (for tel: links) */
-const telHref = (phone) => `tel:+${phoneDigits(phone)}`;
+/** 10-digit phone -> "tel:+919876543210" (for tel: links) */
+const telHref = (phone) => {
+  const d = String(phone || '').replace(/\D/g, '');
+  if (d.length === 10) return `tel:+91${d}`;
+  return `tel:+${d}`;
+};
 
 const whatsappHref = (phone, text) =>
   `https://wa.me/${phoneDigits(phone)}${text ? `?text=${encodeURIComponent(text)}` : ''}`;

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const DEFAULT_URI = 'mongodb://127.0.0.1:27017/localfix';
+const DEFAULT_URI = 'mongodb://127.0.0.1:27017/fixitnow';
 
 /**
  * Connects Mongoose to MongoDB and returns the connection URI in use
