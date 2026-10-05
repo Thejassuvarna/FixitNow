@@ -1,0 +1,189 @@
+<% const meta = categoryMeta(worker.category); const wname = worker.userId.name; %>
+<%# ========== Banner ========== %>
+<section class="hero-bg relative overflow-hidden text-white">
+  <div class="hero-grid absolute inset-0 opacity-60"></div>
+  <div class="container-x relative pb-24 pt-10">
+    <nav class="mb-6 text-xs font-semibold text-ink-300" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-white">Home</a> / <a href="/services" class="hover:text-white">Find pros</a> /
+      <a href="/services?category=<%= encodeURIComponent(worker.category) %>" class="hover:text-white"><%= worker.category %>s</a>
+    </nav>
+    <% if (!worker.isActive) { %>
+      <p class="mb-4 inline-block rounded-lg bg-rose-500/20 px-3 py-1.5 text-sm font-semibold text-rose-200">This listing is hidden from the public by an administrator.</p>
+    <% } %>
+    <div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+      <div class="relative">
+        <% if (worker.photo) { %>
+          <img src="<%= worker.photo %>" alt="<%= wname %>" class="h-28 w-28 rounded-3xl border-4 border-white/20 object-cover shadow-lift">
+        <% } else { %>
+          <span class="grid h-28 w-28 place-items-center rounded-3xl border-4 border-white/20 bg-gradient-to-br <%= avatarGradient(wname) %> font-display text-4xl font-bold text-white shadow-lift"><%= initials(wname) %></span>
+        <% } %>
+        <span class="absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-full border-4 border-ink-900 <%= worker.isAvailable ? 'bg-emerald-500 animate-pulse-ring' : 'bg-amber-400' %>"></span>
+      </div>
+      <div>
+        <div class="flex flex-wrap items-center gap-3">
+          <h1 class="text-3xl font-extrabold text-white sm:text-4xl"><%= wname %></h1>
+          <% if (worker.isVerified) { %>
+            <span class="badge bg-sky-500/20 text-sky-200 ring-1 ring-sky-400/40" id="verified-badge"><%- icon('shield', 'h-4 w-4') %> Verified pro</span>
+          <% } %>
+        </div>
+        <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-ink-200">
+          <span class="font-semibold"><%= meta.icon %> <%= worker.category %></span>
+          <span class="flex items-center gap-1"><%- icon('pin', 'h-4 w-4') %> <%= worker.location.city %>, <%= worker.location.state %> – <%= worker.location.pincode %></span>
+        </p>
+        <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
+          <% if (worker.reviewsCount) { %>
+            <%- renderStars(worker.averageRating, 'text-lg') %>
+            <span class="font-bold text-white"><%= worker.averageRating.toFixed(1) %></span>
+            <a href="#reviews" class="text-ink-300 underline-offset-2 hover:underline">(<%= worker.reviewsCount %> review<%= worker.reviewsCount > 1 ? 's' : '' %>)</a>
+          <% } else { %>
+            <span class="text-ink-300">No reviews yet</span>
+          <% } %>
+          <span class="badge <%= worker.isAvailable ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-400/20 text-amber-200' %>" id="availability-badge">
+            ● <%= worker.isAvailable ? 'Available now' : 'Currently busy' %>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-x -mt-12 grid gap-8 lg:grid-cols-[1fr_360px]">
+  <%# ========== Main column ========== %>
+  <div class="space-y-8 mt-10">
+    <div class="card p-6 sm:p-8" data-reveal>
+      <h2 class="text-xl font-bold">About <%= wname.split(' ')[0] %></h2>
+      <p class="mt-3 leading-relaxed text-ink-600"><%= worker.bio || `${wname} is a ${worker.category.toLowerCase()} serving ${worker.location.city} and nearby areas.` %></p>
+
+      <dl class="mt-6 grid gap-4 sm:grid-cols-3">
+        <div class="rounded-2xl bg-ink-50 p-4"><dt class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-400"><%- icon('briefcase', 'h-4 w-4') %> Experience</dt><dd class="mt-1 font-display text-2xl font-extrabold"><%= worker.experienceYears %> <span class="text-sm font-semibold text-ink-500">yr<%= worker.experienceYears === 1 ? '' : 's' %></span></dd></div>
+        <div class="rounded-2xl bg-ink-50 p-4"><dt class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-400"><%- icon('pin', 'h-4 w-4') %> Service radius</dt><dd class="mt-1 font-display text-2xl font-extrabold"><%= worker.serviceRadiusKm %> <span class="text-sm font-semibold text-ink-500">km</span></dd></div>
+        <div class="rounded-2xl bg-ink-50 p-4"><dt class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-400"><%- icon('clock', 'h-4 w-4') %> Member since</dt><dd class="mt-1 font-display text-2xl font-extrabold"><%= new Date(worker.userId.createdAt).getFullYear() %></dd></div>
+      </dl>
+
+      <% if (worker.skills && worker.skills.length) { %>
+        <h3 class="mt-8 text-sm font-bold uppercase tracking-wider text-ink-400">Skills &amp; services</h3>
+        <div class="mt-3 flex flex-wrap gap-2" id="skills-list">
+          <% worker.skills.forEach((s) => { %><span class="rounded-xl <%= meta.tint %> px-3.5 py-1.5 text-sm font-semibold"><%= s %></span><% }) %>
+        </div>
+      <% } %>
+
+      <h3 class="mt-8 text-sm font-bold uppercase tracking-wider text-ink-400">Pincodes served</h3>
+      <div class="mt-3 flex flex-wrap gap-2" id="pincodes-list">
+        <% (worker.servicePincodes.length ? worker.servicePincodes : [worker.location.pincode]).forEach((p) => { %>
+          <a href="/services?location=<%= p %>" class="chip <%= p === worker.location.pincode ? '!border-brand-300 !bg-brand-50 !text-brand-700' : '' %>"><%- icon('pin', 'h-3.5 w-3.5') %> <%= p %><%= p === worker.location.pincode ? ' · Home' : '' %></a>
+        <% }) %>
+      </div>
+      <% if (worker.location.address) { %><p class="mt-4 text-sm text-ink-500"><span class="font-semibold text-ink-700">Base location:</span> <%= worker.location.address %>, <%= worker.location.city %></p><% } %>
+    </div>
+
+    <%# ========== Reviews ========== %>
+    <div class="card scroll-mt-24 p-6 sm:p-8" id="reviews" data-reveal>
+      <h2 class="text-xl font-bold">Ratings &amp; reviews</h2>
+
+      <% if (worker.reviewsCount) { %>
+        <div class="mt-5 grid items-center gap-6 sm:grid-cols-[180px_1fr]">
+          <div class="rounded-2xl bg-ink-50 p-5 text-center">
+            <p class="font-display text-5xl font-extrabold text-ink-900"><%= worker.averageRating.toFixed(1) %></p>
+            <div class="mt-1"><%- renderStars(worker.averageRating, 'text-xl') %></div>
+            <p class="mt-1 text-xs text-ink-500"><%= worker.reviewsCount %> review<%= worker.reviewsCount > 1 ? 's' : '' %></p>
+          </div>
+          <div class="space-y-2">
+            <% distribution.forEach((d) => { %>
+              <div class="flex items-center gap-3 text-xs font-semibold text-ink-500">
+                <span class="w-6"><%= d.star %> ★</span>
+                <div class="h-2 flex-1 overflow-hidden rounded-full bg-ink-100"><div class="h-full rounded-full bg-amber-400" style="width: <%= worker.reviewsCount ? Math.round(d.count / reviews.length * 100) : 0 %>%"></div></div>
+                <span class="w-6 text-right"><%= d.count %></span>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <%# Review form %>
+      <div class="mt-8 rounded-2xl border border-ink-100 bg-ink-50/60 p-5 sm:p-6" id="review-form-wrap">
+        <% if (!currentUser) { %>
+          <p class="text-ink-600">Used <%= wname.split(' ')[0] %>'s services? <a href="/auth/login?role=customer" class="font-bold text-brand-600 hover:underline">Log in</a> or <a href="/auth/register" class="font-bold text-brand-600 hover:underline">create a free account</a> to leave a review.</p>
+        <% } else if (currentUser.role !== 'customer') { %>
+          <p class="text-sm text-ink-500">Only customer accounts can post reviews.</p>
+        <% } else { %>
+          <h3 class="text-lg font-bold"><%= myReview ? 'Update your review' : 'Write a review' %></h3>
+          <form action="/workers/<%= worker._id %>/reviews" method="POST" class="mt-4 space-y-4" id="review-form">
+            <div>
+              <span class="label">Your rating</span>
+              <div class="star-rating" role="radiogroup" aria-label="Rating">
+                <% for (let i = 5; i >= 1; i--) { %><input type="radio" name="rating" id="star<%= i %>" value="<%= i %>" <%= myReview && myReview.rating === i ? 'checked' : '' %> required><label for="star<%= i %>" title="<%= i %> star<%= i > 1 ? 's' : '' %>">★</label><% } %>
+              </div>
+            </div>
+            <div>
+              <label for="comment" class="label">Your feedback</label>
+              <textarea name="comment" id="comment" class="input" rows="4" minlength="3" maxlength="1000" required placeholder="How was the work, punctuality and behaviour?"><%= myReview ? myReview.comment : '' %></textarea>
+            </div>
+            <button type="submit" class="btn-primary" id="submit-review"><%= myReview ? 'Update review' : 'Submit review' %></button>
+          </form>
+        <% } %>
+      </div>
+
+      <%# Review list %>
+      <ul class="mt-8 divide-y divide-ink-100" id="review-list">
+        <% if (!reviews.length) { %>
+          <li class="py-6 text-center text-ink-400">No reviews yet — be the first to share your experience.</li>
+        <% } %>
+        <% reviews.forEach((r) => { %>
+          <li class="flex gap-4 py-5">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br <%= avatarGradient(r.customerId ? r.customerId.name : 'x') %> text-sm font-bold text-white"><%= initials(r.customerId ? r.customerId.name : 'Customer') %></span>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="font-bold text-ink-900"><%= r.customerId ? r.customerId.name : 'Customer' %></p>
+                <span class="text-xs text-ink-400"><%= timeAgo(r.createdAt) %></span>
+              </div>
+              <div class="mt-0.5"><%- renderStars(r.rating, 'text-sm') %></div>
+              <p class="mt-2 break-words text-sm leading-relaxed text-ink-600"><%= r.comment %></p>
+              <% if (currentUser && currentUser.role === 'admin') { %>
+                <form action="/admin/reviews/<%= r._id %>/delete" method="POST" class="mt-2" data-confirm="Delete this review?">
+                  <button class="btn-danger btn-sm"><%- icon('trash', 'h-3.5 w-3.5') %> Remove (admin)</button>
+                </form>
+              <% } %>
+            </div>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <% if (similar.length) { %>
+      <div data-reveal>
+        <h2 class="mb-5 text-xl font-bold">Other <%= worker.category.toLowerCase() %>s you may like</h2>
+        <div class="grid gap-6 md:grid-cols-3">
+          <% similar.forEach((w) => { %><%- include('../partials/workerCard', { w }) %><% }) %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <%# ========== Booking sidebar ========== %>
+  <aside>
+    <div class="card sticky top-24 overflow-hidden" id="booking-card">
+      <div class="bg-gradient-to-br <%= meta.gradient %> p-6 text-white">
+        <p class="text-xs font-bold uppercase tracking-widest text-white/80">Hourly rate</p>
+        <p class="font-display text-5xl font-extrabold"><%= formatINR(worker.hourlyRate) %><span class="text-lg font-semibold text-white/80">/hr</span></p>
+        <p class="mt-2 inline-block rounded-full bg-white/20 px-3 py-1 text-sm font-semibold backdrop-blur">
+          <%= worker.visitingCharges > 0 ? formatINR(worker.visitingCharges) + ' inspection fee' : 'Free inspection visit' %>
+        </p>
+      </div>
+      <div class="space-y-3 p-6">
+        <% if (!worker.isAvailable) { %>
+          <p class="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800">⏳ <%= wname.split(' ')[0] %> is currently busy. You can still message to schedule a later slot.</p>
+        <% } %>
+        <a href="<%= telHref(worker.userId.phone) %>" class="btn-primary w-full !py-3.5 text-base" id="call-now"><%- icon('phone', 'h-5 w-5') %> Call Now</a>
+        <a href="<%= whatsappHref(worker.userId.phone, `Hi ${wname.split(' ')[0]}, I found your profile on LocalFix and would like to book your ${worker.category.toLowerCase()} services in ${worker.location.city} (${worker.location.pincode}).`) %>"
+           target="_blank" rel="noopener noreferrer" class="btn-whatsapp w-full !py-3.5 text-base" id="whatsapp-book"><%- icon('whatsapp', 'h-5 w-5') %> WhatsApp to Book</a>
+        <p class="pt-1 text-center text-sm font-semibold text-ink-700"><%= worker.userId.phone %></p>
+        <ul class="space-y-2 border-t border-dashed border-ink-100 pt-4 text-sm text-ink-500">
+          <li class="flex items-center gap-2"><span class="text-emerald-500"><%- icon('check', 'h-4 w-4', 3) %></span> No booking fee — pay the pro directly</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-500"><%- icon('check', 'h-4 w-4', 3) %></span> Rates in ₹, agree before work starts</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-500"><%- icon('check', 'h-4 w-4', 3) %></span> <%= worker.isVerified ? 'Identity verified by LocalFix' : 'Verification pending' %></li>
+        </ul>
+        <% if (isOwner) { %><a href="/dashboard/worker" class="btn-outline w-full">Edit my profile</a><% } %>
+      </div>
+    </div>
+  </aside>
+</section>

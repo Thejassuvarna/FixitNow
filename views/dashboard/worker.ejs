@@ -1,0 +1,111 @@
+<%
+  const v = form || {
+    category: worker.category, experienceYears: worker.experienceYears, hourlyRate: worker.hourlyRate,
+    visitingCharges: worker.visitingCharges, address: worker.location.address, city: worker.location.city,
+    state: worker.location.state, pincode: worker.location.pincode, servicePincodes: worker.servicePincodes,
+    serviceRadiusKm: worker.serviceRadiusKm, skills: worker.skills, bio: worker.bio,
+  };
+  const phoneVal = form ? form.phone : worker.userId.phone;
+  const meta = categoryMeta(worker.category);
+%>
+<section class="border-b border-ink-100 bg-white">
+  <div class="container-x flex flex-wrap items-center justify-between gap-4 py-8">
+    <div class="flex items-center gap-4">
+      <% if (worker.photo) { %>
+        <img src="<%= worker.photo %>" alt="" class="h-16 w-16 rounded-2xl object-cover shadow-soft">
+      <% } else { %>
+        <span class="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br <%= avatarGradient(worker.userId.name) %> font-display text-xl font-bold text-white"><%= initials(worker.userId.name) %></span>
+      <% } %>
+      <div>
+        <p class="text-sm font-semibold text-ink-400">Worker dashboard</p>
+        <h1 class="text-2xl font-extrabold sm:text-3xl">Hello, <%= worker.userId.name.split(' ')[0] %> 👋</h1>
+        <p class="text-sm text-ink-500"><%= meta.icon %> <%= worker.category %> · <%= worker.location.city %> <%= worker.location.pincode %>
+          <% if (worker.isVerified) { %><span class="badge ml-1 bg-sky-50 text-sky-700"><%- icon('shield', 'h-3.5 w-3.5') %> Verified</span><% } else { %><span class="badge ml-1 bg-ink-100 text-ink-500">Verification pending</span><% } %>
+          <% if (!worker.isActive) { %><span class="badge ml-1 bg-rose-50 text-rose-700">Hidden by admin</span><% } %>
+        </p>
+      </div>
+    </div>
+    <a href="/workers/<%= worker._id %>" class="btn-outline" id="view-public">View public profile <%- icon('arrow', 'h-4 w-4') %></a>
+  </div>
+</section>
+
+<section class="container-x grid gap-8 py-10 lg:grid-cols-[1fr_340px]">
+  <div class="space-y-8">
+
+    <%# Availability toggle %>
+    <div class="card flex flex-wrap items-center justify-between gap-5 p-6" id="availability-card">
+      <div>
+        <h2 class="text-lg font-bold">Availability status</h2>
+        <p class="mt-1 text-sm text-ink-500">Customers see this on your card and profile. Switch to <strong>Busy</strong> when you can't take new jobs.</p>
+      </div>
+      <form action="/dashboard/worker/availability" method="POST" class="flex items-center gap-3" id="availability-form">
+        <input type="hidden" name="available" id="availability-value" value="<%= !worker.isAvailable %>">
+        <span id="availability-text" class="text-sm font-bold <%= worker.isAvailable ? 'text-emerald-600' : 'text-amber-600' %>"><%= worker.isAvailable ? 'Available' : 'Busy' %></span>
+        <button type="submit" role="switch" id="availability-switch" class="switch" aria-checked="<%= worker.isAvailable %>" aria-label="Toggle availability"><span class="switch-knob"></span></button>
+      </form>
+    </div>
+
+    <% if (errors.length) { %>
+      <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700" role="alert" id="form-errors">
+        <p class="mb-1 font-bold">Please fix the following:</p>
+        <ul class="list-inside list-disc space-y-0.5"><% errors.forEach((e) => { %><li><%= e %></li><% }) %></ul>
+      </div>
+    <% } %>
+
+    <%# Profile form %>
+    <form action="/dashboard/worker" method="POST" enctype="multipart/form-data" class="card space-y-8 p-6 sm:p-8" id="profile-form">
+      <div>
+        <h2 class="text-lg font-bold">Contact details</h2>
+        <div class="mt-4 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="phone" class="label">Mobile / WhatsApp number *</label>
+            <input type="tel" name="phone" id="phone" class="input" value="<%= phoneVal || '' %>" placeholder="+91 98765 43210" required inputmode="tel">
+            <p class="hint">Customers use this for Call &amp; WhatsApp booking.</p>
+          </div>
+          <div>
+            <label class="label" for="email-ro">Email</label>
+            <input type="email" id="email-ro" class="input bg-ink-50 text-ink-500" value="<%= worker.userId.email %>" disabled>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-dashed border-ink-200 pt-8">
+        <h2 class="mb-4 text-lg font-bold">Profile &amp; pricing</h2>
+        <%- include('../partials/workerFields', { v, categories, states, currentPhoto: worker.photo || '' }) %>
+      </div>
+      <div class="flex justify-end gap-3">
+        <a href="/dashboard/worker" class="btn-ghost">Reset</a>
+        <button type="submit" class="btn-primary" id="save-profile">Save changes</button>
+      </div>
+    </form>
+  </div>
+
+  <aside class="space-y-6">
+    <div class="card overflow-hidden">
+      <div class="bg-gradient-to-br <%= meta.gradient %> p-6 text-white">
+        <p class="text-xs font-bold uppercase tracking-widest text-white/80">Your current rate</p>
+        <p class="font-display text-4xl font-extrabold" id="stat-rate"><%= formatINR(worker.hourlyRate) %><span class="text-base font-semibold text-white/80">/hr</span></p>
+        <p class="text-sm text-white/90"><%= worker.visitingCharges ? formatINR(worker.visitingCharges) + ' inspection fee' : 'Free inspection' %></p>
+      </div>
+      <div class="grid grid-cols-2 divide-x divide-ink-100 text-center">
+        <div class="p-5"><p class="font-display text-3xl font-extrabold"><%= worker.reviewsCount ? worker.averageRating.toFixed(1) : '–' %></p><p class="text-xs text-ink-500">Average rating</p></div>
+        <div class="p-5"><p class="font-display text-3xl font-extrabold"><%= worker.reviewsCount %></p><p class="text-xs text-ink-500">Reviews</p></div>
+      </div>
+    </div>
+
+    <div class="card p-6">
+      <h2 class="text-lg font-bold">Recent reviews</h2>
+      <% if (!recent.length) { %>
+        <p class="mt-3 text-sm text-ink-400">No reviews yet. Great service gets great reviews!</p>
+      <% } %>
+      <ul class="mt-4 space-y-4">
+        <% recent.forEach((r) => { %>
+          <li class="border-b border-ink-100 pb-4 last:border-0 last:pb-0">
+            <div class="flex items-center justify-between"><p class="text-sm font-bold"><%= r.customerId ? r.customerId.name : 'Customer' %></p><%- renderStars(r.rating, 'text-sm') %></div>
+            <p class="mt-1 line-clamp-3 text-sm text-ink-500"><%= r.comment %></p>
+            <p class="mt-1 text-xs text-ink-300"><%= timeAgo(r.createdAt) %></p>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+  </aside>
+</section>

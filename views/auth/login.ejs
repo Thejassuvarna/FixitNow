@@ -1,0 +1,56 @@
+<section class="relative">
+  <div class="container-x grid min-h-[calc(100vh-4rem)] items-stretch gap-0 py-8 lg:grid-cols-2 lg:py-12">
+    <%# Decorative side %>
+    <div class="hero-bg relative hidden overflow-hidden rounded-l-[2rem] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+      <div class="hero-grid absolute inset-0"></div>
+      <div class="relative">
+        <p class="eyebrow !text-brand-300">Welcome back</p>
+        <h1 class="text-4xl font-extrabold leading-tight text-white">Your neighbourhood's best pros, <span class="text-gradient">one login away.</span></h1>
+      </div>
+      <ul class="relative space-y-4 text-ink-200">
+        <li class="glass flex items-start gap-3 rounded-2xl p-4"><span class="text-2xl">⭐</span><span><strong class="block text-white">Real reviews</strong>Rate and read feedback from verified customers.</span></li>
+        <li class="glass flex items-start gap-3 rounded-2xl p-4"><span class="text-2xl">₹</span><span><strong class="block text-white">Transparent pricing</strong>Hourly rates and visiting fees shown upfront.</span></li>
+        <li class="glass flex items-start gap-3 rounded-2xl p-4"><span class="text-2xl">💬</span><span><strong class="block text-white">Call or WhatsApp</strong>Talk to your pro directly — no middleman.</span></li>
+      </ul>
+    </div>
+
+    <%# Form %>
+    <div class="card flex flex-col justify-center rounded-3xl p-6 sm:p-10 lg:rounded-l-none">
+      <h2 class="text-3xl font-extrabold">Log in</h2>
+      <p class="mt-1 text-ink-500">New here? <a href="/auth/register" class="font-bold text-brand-600 hover:underline">Create an account</a></p>
+
+      <div class="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-ink-100 p-1" role="tablist" aria-label="Account type" data-role-toggle>
+        <button type="button" role="tab" data-role="customer" class="role-btn rounded-xl px-4 py-2.5 text-sm font-bold transition" aria-selected="<%= role === 'customer' %>">🙋 Customer</button>
+        <button type="button" role="tab" data-role="worker" class="role-btn rounded-xl px-4 py-2.5 text-sm font-bold transition" aria-selected="<%= role === 'worker' %>">🛠️ Worker</button>
+      </div>
+
+      <% if (errors.length) { %>
+        <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700" role="alert" id="form-errors">
+          <% errors.forEach((e) => { %><p><%= e %></p><% }) %>
+        </div>
+      <% } %>
+
+      <form action="/auth/login" method="POST" class="mt-6 space-y-5" id="login-form" novalidate>
+        <input type="hidden" name="role" id="role-input" value="<%= role %>">
+        <div>
+          <label for="email" class="label">Email</label>
+          <input type="email" name="email" id="email" class="input" value="<%= form.email || '' %>" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div>
+          <label for="password" class="label">Password</label>
+          <div class="relative">
+            <input type="password" name="password" id="password" class="input pr-16" placeholder="Your password" autocomplete="current-password" required>
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-400 hover:text-ink-700" data-toggle-password="#password">Show</button>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full !py-3.5" id="login-submit">Log in as <span id="role-label"><%= role === 'worker' ? 'Worker' : 'Customer' %></span> <%- icon('arrow', 'h-4 w-4') %></button>
+      </form>
+
+      <div class="mt-6 rounded-xl bg-ink-50 p-4 text-xs text-ink-500">
+        <p class="font-bold text-ink-700">Demo accounts (after running <code>npm run seed</code>)</p>
+        <p class="mt-1">Customer: <code>priya@example.com</code> · Worker: <code>ramesh@example.com</code> · Admin: <code>admin@localfix.in</code></p>
+        <p>Password for customer/worker: <code>Password@123</code> · Admin: <code>Admin@12345</code></p>
+      </div>
+    </div>
+  </div>
+</section>

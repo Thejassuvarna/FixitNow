@@ -1,0 +1,63 @@
+<header class="sticky top-0 z-50 border-b border-ink-100/80 bg-white/80 backdrop-blur-xl">
+  <div class="container-x flex h-16 items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-2.5" aria-label="LocalFix home">
+      <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-amber-400 font-display text-lg font-extrabold text-white shadow-glow">L</span>
+      <span class="font-display text-xl font-extrabold tracking-tight text-ink-900">Local<span class="text-brand-500">Fix</span></span>
+    </a>
+
+    <nav class="hidden items-center gap-1 md:flex" aria-label="Primary">
+      <a href="/" class="nav-link <%= currentPath === '/' ? 'nav-link-active' : '' %>">Home</a>
+      <a href="/services" class="nav-link <%= currentPath === '/services' ? 'nav-link-active' : '' %>">Find Pros</a>
+      <% if (!currentUser) { %>
+        <a href="/auth/register?role=worker" class="nav-link">Become a Pro</a>
+      <% } %>
+      <% if (currentUser && currentUser.role === 'worker') { %>
+        <a href="/dashboard/worker" class="nav-link <%= currentPath.startsWith('/dashboard') ? 'nav-link-active' : '' %>">Dashboard</a>
+      <% } %>
+      <% if (currentUser && currentUser.role === 'admin') { %>
+        <a href="/admin" class="nav-link <%= currentPath.startsWith('/admin') ? 'nav-link-active' : '' %>">Admin</a>
+      <% } %>
+    </nav>
+
+    <div class="hidden items-center gap-2 md:flex">
+      <% if (currentUser) { %>
+        <span class="flex items-center gap-2 rounded-full bg-ink-50 py-1 pl-1 pr-3 text-sm font-semibold text-ink-700">
+          <span class="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br <%= avatarGradient(currentUser.name) %> text-xs font-bold text-white"><%= initials(currentUser.name) %></span>
+          <%= currentUser.name.split(' ')[0] %>
+          <span class="rounded-full bg-ink-200/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-600"><%= currentUser.role %></span>
+        </span>
+        <form action="/auth/logout" method="POST">
+          <button type="submit" class="btn-ghost btn-sm" id="logout-btn"><%- icon('logout', 'h-4 w-4') %> Log out</button>
+        </form>
+      <% } else { %>
+        <a href="/auth/login" class="btn-ghost btn-sm" id="nav-login">Log in</a>
+        <a href="/auth/register" class="btn-primary btn-sm" id="nav-signup">Sign up free</a>
+      <% } %>
+    </div>
+
+    <button type="button" id="menu-toggle" class="grid h-10 w-10 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 md:hidden" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
+      <span class="menu-open"><%- icon('menu', 'h-6 w-6') %></span>
+      <span class="menu-close hidden"><%- icon('x', 'h-6 w-6') %></span>
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="hidden border-t border-ink-100 bg-white md:hidden">
+    <div class="container-x flex flex-col gap-1 py-3">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/services" class="nav-link">Find Pros</a>
+      <% if (!currentUser) { %>
+        <a href="/auth/register?role=worker" class="nav-link">Become a Pro</a>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <a href="/auth/login" class="btn-outline">Log in</a>
+          <a href="/auth/register" class="btn-primary">Sign up</a>
+        </div>
+      <% } else { %>
+        <% if (currentUser.role === 'worker') { %><a href="/dashboard/worker" class="nav-link">My Dashboard</a><% } %>
+        <% if (currentUser.role === 'admin') { %><a href="/admin" class="nav-link">Admin</a><% } %>
+        <form action="/auth/logout" method="POST" class="mt-2">
+          <button type="submit" class="btn-outline w-full">Log out (<%= currentUser.name.split(' ')[0] %>)</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,62 @@
+<%# Expects: w (WorkerProfile with populated userId) %>
+<% const meta = categoryMeta(w.category); %>
+<article class="card card-hover group relative flex flex-col overflow-hidden" data-worker-card>
+  <div class="h-1.5 bg-gradient-to-r <%= meta.gradient %>"></div>
+  <div class="flex flex-1 flex-col p-5">
+    <div class="flex items-start gap-4">
+      <div class="relative shrink-0">
+        <% if (w.photo) { %>
+          <img src="<%= w.photo %>" alt="<%= w.userId.name %>" class="h-16 w-16 rounded-2xl object-cover shadow-soft" loading="lazy">
+        <% } else { %>
+          <span class="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br <%= avatarGradient(w.userId.name) %> font-display text-xl font-bold text-white shadow-soft"><%= initials(w.userId.name) %></span>
+        <% } %>
+        <span class="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white <%= w.isAvailable ? 'bg-emerald-500' : 'bg-amber-400' %>" title="<%= w.isAvailable ? 'Available' : 'Busy' %>"></span>
+      </div>
+      <div class="min-w-0 flex-1">
+        <h3 class="flex items-center gap-1.5 truncate text-lg font-bold">
+          <a href="/workers/<%= w._id %>" class="truncate after:absolute after:inset-0 hover:text-brand-600"><%= w.userId.name %></a>
+          <% if (w.isVerified) { %>
+            <span class="text-sky-500" title="Verified professional"><%- icon('shield', 'h-5 w-5') %></span>
+          <% } %>
+        </h3>
+        <span class="mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold <%= meta.tint %>"><%= meta.icon %> <%= w.category %></span>
+        <p class="mt-2 flex items-center gap-1 text-sm text-ink-500">
+          <%- icon('pin', 'h-4 w-4 shrink-0 text-ink-300') %>
+          <span class="truncate"><%= w.location.city %> · <%= w.location.pincode %></span>
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-center gap-2 text-sm">
+      <% if (w.reviewsCount > 0) { %>
+        <%- renderStars(w.averageRating, 'text-base') %>
+        <span class="font-bold text-ink-800"><%= w.averageRating.toFixed(1) %></span>
+        <span class="text-ink-400">(<%= w.reviewsCount %> review<%= w.reviewsCount > 1 ? 's' : '' %>)</span>
+      <% } else { %>
+        <span class="badge bg-ink-100 text-ink-500">New on LocalFix</span>
+      <% } %>
+    </div>
+
+    <% if (w.skills && w.skills.length) { %>
+      <div class="mt-3 flex flex-wrap gap-1.5">
+        <% w.skills.slice(0, 3).forEach((s) => { %>
+          <span class="rounded-md bg-ink-50 px-2 py-1 text-[11px] font-medium text-ink-600"><%= s %></span>
+        <% }) %>
+        <% if (w.skills.length > 3) { %><span class="px-1 py-1 text-[11px] font-medium text-ink-400">+<%= w.skills.length - 3 %> more</span><% } %>
+      </div>
+    <% } %>
+
+    <div class="mt-auto pt-5">
+      <div class="flex items-end justify-between border-t border-dashed border-ink-100 pt-4">
+        <div>
+          <p class="font-display text-2xl font-extrabold text-ink-900"><%= formatINR(w.hourlyRate) %><span class="text-sm font-semibold text-ink-400">/hr</span></p>
+          <p class="text-xs text-ink-500"><%= w.visitingCharges > 0 ? formatINR(w.visitingCharges) + ' inspection fee' : 'Free inspection' %></p>
+        </div>
+        <span class="badge <%= w.isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' %>">
+          <span class="h-1.5 w-1.5 rounded-full <%= w.isAvailable ? 'bg-emerald-500' : 'bg-amber-500' %>"></span>
+          <%= w.isAvailable ? 'Available' : 'Busy' %>
+        </span>
+      </div>
+    </div>
+  </div>
+</article>

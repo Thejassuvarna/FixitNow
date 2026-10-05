@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en-IN" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <meta name="description" content="<%= description %>">
+  <meta name="theme-color" content="#0b0d1d">
+  <meta property="og:title" content="<%= title %>">
+  <meta property="og:description" content="<%= description %>">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23fb5a14'/><text x='50' y='68' font-size='56' text-anchor='middle' fill='white' font-family='Arial' font-weight='800'>L</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/output.css">
+  <%- style %>
+</head>
+<body class="flex min-h-full flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">Skip to content</a>
+
+  <%- include('../partials/header') %>
+
+  <% if (flash && flash.length) { %>
+    <div id="toast-stack" class="pointer-events-none fixed right-4 top-20 z-[90] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-3" aria-live="polite">
+      <% flash.forEach((f, i) => { %>
+        <div class="toast pointer-events-auto flex animate-slide-in items-start gap-3 rounded-2xl border bg-white p-4 shadow-lift
+          <%= f.type === 'success' ? 'border-emerald-200' : f.type === 'error' ? 'border-rose-200' : 'border-sky-200' %>" role="status" style="animation-delay: <%= i * 80 %>ms">
+          <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-white <%= f.type === 'success' ? 'bg-emerald-500' : f.type === 'error' ? 'bg-rose-500' : 'bg-sky-500' %>">
+            <%- icon(f.type === 'error' ? 'x' : 'check', 'h-3.5 w-3.5', 3) %>
+          </span>
+          <p class="flex-1 text-sm font-medium text-ink-800"><%= f.message %></p>
+          <button type="button" class="toast-close text-ink-300 hover:text-ink-700" aria-label="Dismiss"><%- icon('x', 'h-4 w-4') %></button>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <main id="main" class="flex-1">
+    <%- body %>
+  </main>
+
+  <%- include('../partials/footer') %>
+
+  <script src="/js/main.js" defer></script>
+  <%- script %>
+</body>
+</html>

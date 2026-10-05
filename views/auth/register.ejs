@@ -1,0 +1,68 @@
+<section class="container-x py-8 lg:py-12">
+  <div class="mx-auto max-w-3xl">
+    <div class="card rounded-3xl p-6 sm:p-10">
+      <p class="eyebrow">Join LocalFix</p>
+      <h1 class="text-3xl font-extrabold sm:text-4xl">Create your account</h1>
+      <p class="mt-1 text-ink-500">Already registered? <a href="/auth/login" class="font-bold text-brand-600 hover:underline">Log in</a></p>
+
+      <div class="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-ink-100 p-1" role="tablist" aria-label="Account type" data-role-toggle>
+        <button type="button" role="tab" data-role="customer" id="tab-customer" class="role-btn rounded-xl px-4 py-3 text-sm font-bold transition" aria-selected="<%= role === 'customer' %>">🙋 I need a pro <span class="block text-xs font-medium opacity-70">Customer</span></button>
+        <button type="button" role="tab" data-role="worker" id="tab-worker" class="role-btn rounded-xl px-4 py-3 text-sm font-bold transition" aria-selected="<%= role === 'worker' %>">🛠️ I'm a pro <span class="block text-xs font-medium opacity-70">Service provider</span></button>
+      </div>
+
+      <% if (errors.length) { %>
+        <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700" role="alert" id="form-errors">
+          <p class="mb-1 font-bold">Please fix the following:</p>
+          <ul class="list-inside list-disc space-y-0.5"><% errors.forEach((e) => { %><li><%= e %></li><% }) %></ul>
+        </div>
+      <% } %>
+
+      <form action="/auth/register" method="POST" enctype="multipart/form-data" class="mt-6 space-y-8" id="register-form">
+        <input type="hidden" name="role" id="role-input" value="<%= role %>">
+
+        <div>
+          <h2 class="mb-4 text-lg font-bold">Account details</h2>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="name" class="label">Full name *</label>
+              <input type="text" name="name" id="name" class="input" value="<%= form.name || '' %>" placeholder="e.g. Ramesh Shetty" maxlength="60" required autocomplete="name">
+            </div>
+            <div>
+              <label for="phone" class="label">Mobile number <span class="font-normal text-ink-400" id="phone-optional">(optional)</span><span class="hidden" id="phone-required">*</span></label>
+              <input type="tel" name="phone" id="phone" class="input" value="<%= form.phone || '' %>" placeholder="+91 98765 43210" autocomplete="tel" inputmode="tel">
+            </div>
+            <div class="sm:col-span-2">
+              <label for="email" class="label">Email *</label>
+              <input type="email" name="email" id="email" class="input" value="<%= form.email || '' %>" placeholder="you@example.com" required autocomplete="email">
+            </div>
+            <div>
+              <label for="password" class="label">Password *</label>
+              <div class="relative">
+                <input type="password" name="password" id="password" class="input pr-16" minlength="8" placeholder="Min. 8 characters" required autocomplete="new-password">
+                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-400 hover:text-ink-700" data-toggle-password="#password">Show</button>
+              </div>
+            </div>
+            <div>
+              <label for="confirmPassword" class="label">Confirm password *</label>
+              <input type="password" name="confirmPassword" id="confirmPassword" class="input" minlength="8" placeholder="Repeat password" required autocomplete="new-password">
+            </div>
+          </div>
+        </div>
+
+        <fieldset id="worker-fields" <%= role === 'worker' ? '' : 'disabled hidden' %> class="min-w-0 space-y-4 border-t border-dashed border-ink-200 pt-8">
+          <legend class="sr-only">Professional details</legend>
+          <div>
+            <h2 class="text-lg font-bold">Your professional profile</h2>
+            <p class="text-sm text-ink-500">This is what customers will see. You can edit it any time from your dashboard.</p>
+          </div>
+          <%- include('../partials/workerFields', { v: form, categories, states, currentPhoto: '' }) %>
+        </fieldset>
+
+        <button type="submit" class="btn-primary w-full !py-3.5 text-base" id="register-submit">
+          <span id="register-label"><%= role === 'worker' ? 'Create worker account' : 'Create customer account' %></span> <%- icon('arrow', 'h-4 w-4') %>
+        </button>
+        <p class="text-center text-xs text-ink-400">By signing up you agree to LocalFix's Terms of Service and Privacy Policy.</p>
+      </form>
+    </div>
+  </div>
+</section>

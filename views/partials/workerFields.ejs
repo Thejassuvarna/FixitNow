@@ -1,0 +1,81 @@
+<%# Shared worker profile fields. Expects: v (flat values), categories, states, currentPhoto (optional) %>
+<div class="grid gap-5 sm:grid-cols-2">
+  <div class="sm:col-span-2">
+    <span class="label">Photo <span class="font-normal text-ink-400">(JPG/PNG/WEBP, max 2 MB)</span></span>
+    <label class="flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-ink-200 bg-ink-50/50 p-4 transition hover:border-brand-300 hover:bg-brand-50/40">
+      <span class="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white text-ink-300 shadow-soft">
+        <img id="photo-preview" src="<%= typeof currentPhoto !== 'undefined' && currentPhoto ? currentPhoto : '' %>" alt="Photo preview" class="<%= typeof currentPhoto !== 'undefined' && currentPhoto ? '' : 'hidden' %> h-full w-full object-cover">
+        <span id="photo-placeholder" class="<%= typeof currentPhoto !== 'undefined' && currentPhoto ? 'hidden' : '' %>"><%- icon('camera', 'h-7 w-7') %></span>
+      </span>
+      <span class="text-sm"><span class="block font-semibold text-ink-800" id="photo-name">Click to upload a profile photo</span><span class="text-ink-400">A clear face photo builds trust with customers.</span></span>
+      <input type="file" name="photo" id="photo" accept="image/png,image/jpeg,image/webp" class="sr-only">
+    </label>
+  </div>
+
+  <div>
+    <label for="category" class="label">Service category *</label>
+    <select name="category" id="category" class="input" required>
+      <option value="" disabled <%= !v.category ? 'selected' : '' %>>Select your trade</option>
+      <% categories.forEach((c) => { %><option value="<%= c.name %>" <%= v.category === c.name ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %>
+    </select>
+  </div>
+  <div>
+    <label for="experienceYears" class="label">Experience (years)</label>
+    <input type="number" name="experienceYears" id="experienceYears" class="input" min="0" max="60" step="1" value="<%= v.experienceYears ?? '' %>" placeholder="e.g. 8">
+  </div>
+
+  <div>
+    <label for="hourlyRate" class="label">Hourly rate (₹) *</label>
+    <div class="relative">
+      <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-ink-400">₹</span>
+      <input type="number" name="hourlyRate" id="hourlyRate" class="input !pl-9" min="50" max="10000" step="1" value="<%= v.hourlyRate ?? '' %>" placeholder="299" required>
+    </div>
+    <p class="hint">Shown as ₹299/hr on your profile.</p>
+  </div>
+  <div>
+    <label for="visitingCharges" class="label">Visiting / inspection charges (₹)</label>
+    <div class="relative">
+      <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-ink-400">₹</span>
+      <input type="number" name="visitingCharges" id="visitingCharges" class="input !pl-9" min="0" max="5000" step="1" value="<%= v.visitingCharges ?? '' %>" placeholder="150">
+    </div>
+    <p class="hint">Leave 0 for a free inspection.</p>
+  </div>
+
+  <div class="sm:col-span-2">
+    <label for="address" class="label">Address / area</label>
+    <input type="text" name="address" id="address" class="input" maxlength="200" value="<%= v.address || '' %>" placeholder="e.g. 12, Main Road, Darbe">
+  </div>
+  <div>
+    <label for="city" class="label">City / town *</label>
+    <input type="text" name="city" id="city" class="input" maxlength="60" value="<%= v.city || '' %>" placeholder="e.g. Puttur" required>
+  </div>
+  <div>
+    <label for="state" class="label">State *</label>
+    <select name="state" id="state" class="input" required>
+      <option value="" disabled <%= !v.state ? 'selected' : '' %>>Select state</option>
+      <% states.forEach((s) => { %><option value="<%= s %>" <%= v.state === s ? 'selected' : '' %>><%= s %></option><% }) %>
+    </select>
+  </div>
+  <div>
+    <label for="pincode" class="label">Home pincode *</label>
+    <input type="text" name="pincode" id="pincode" class="input" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" value="<%= v.pincode || '' %>" placeholder="574201" required data-digits-only title="6-digit pincode">
+  </div>
+  <div>
+    <label for="serviceRadiusKm" class="label">Service radius (km)</label>
+    <input type="number" name="serviceRadiusKm" id="serviceRadiusKm" class="input" min="1" max="100" step="1" value="<%= v.serviceRadiusKm ?? 10 %>">
+  </div>
+  <div class="sm:col-span-2">
+    <label for="servicePincodes" class="label">Other pincodes you serve</label>
+    <input type="text" name="servicePincodes" id="servicePincodes" class="input" value="<%= Array.isArray(v.servicePincodes) ? v.servicePincodes.filter((p) => p !== v.pincode).join(', ') : (v.servicePincodes || '') %>" placeholder="574202, 574203, 574241">
+    <p class="hint">Comma-separated 6-digit pincodes. Customers searching these pincodes will find you.</p>
+  </div>
+  <div class="sm:col-span-2">
+    <label for="skills" class="label">Skills</label>
+    <input type="text" name="skills" id="skills" class="input" value="<%= Array.isArray(v.skills) ? v.skills.join(', ') : (v.skills || '') %>" placeholder="House wiring, Inverter installation, MCB repair">
+    <p class="hint">Comma-separated, up to 12.</p>
+  </div>
+  <div class="sm:col-span-2">
+    <label for="bio" class="label">About you</label>
+    <textarea name="bio" id="bio" class="input" maxlength="600" rows="4" placeholder="Tell customers about your experience, tools and how you work."><%= v.bio || '' %></textarea>
+  </div>
+</div>
